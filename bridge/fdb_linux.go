@@ -13,7 +13,10 @@ import (
 
 // MonitorFdb monitors bridge fdb entry's adding and deleting.
 func MonitorFdb(fdbHandler func(*FdbEntry)) error {
-	conn, err := netlink.Dial(0, nil)
+	nlcfg := &netlink.Config{
+		Groups: syscall.RTNLGRP_NEIGH,
+	}
+	conn, err := netlink.Dial(syscall.NETLINK_ROUTE, nlcfg)
 	if err != nil {
 		return err
 	}
