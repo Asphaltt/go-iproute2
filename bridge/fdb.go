@@ -1,23 +1,8 @@
 package bridge
 
 import (
-	"encoding/binary"
 	"net"
-
-	goendian "github.com/virtao/GoEndian"
 )
-
-var (
-	endian binary.ByteOrder
-)
-
-func init() {
-	if goendian.IsBigEndian() {
-		endian = binary.BigEndian
-	} else {
-		endian = binary.LittleEndian
-	}
-}
 
 // FdbActionType is the type for the fdb entry's action.
 type FdbActionType int

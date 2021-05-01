@@ -8,6 +8,7 @@ import (
 	"unsafe"
 
 	"github.com/mdlayher/netlink"
+	"github.com/mdlayher/netlink/nlenc"
 	"golang.org/x/sys/unix"
 )
 
@@ -95,7 +96,7 @@ func parseFdbMsg(msg netlink.Message) (*FdbEntry, bool, error) {
 		case unix.NDA_LLADDR:
 			entry.Lladdr = net.HardwareAddr(attr.Data)
 		case unix.NDA_MASTER:
-			entry.Master = int(endian.Uint32(attr.Data))
+			entry.Master = int(nlenc.Uint32(attr.Data))
 		}
 	}
 	return &entry, true, nil
