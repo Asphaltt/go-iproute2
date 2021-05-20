@@ -8,7 +8,6 @@ import (
 	"unsafe"
 
 	"github.com/mdlayher/netlink"
-	"github.com/mdlayher/netlink/nlenc"
 	"golang.org/x/sys/unix"
 )
 
@@ -87,17 +86,20 @@ func parseFdbMsg(msg netlink.Message) (*FdbEntry, bool, error) {
 	// the following attributes are rtattr.
 	// referece: https://github.com/golang/go/blob/master/src/syscall/netlink_linux.go#L148
 	//           ParseNetlinkRouteAttr
-	attrs, err := netlink.UnmarshalAttributes(data)
+	ad, err := netlink.NewAttributeDecoder(data)
 	if err != nil {
 		return nil, false, err
 	}
-	for _, attr := range attrs {
-		switch attr.Type {
+	for ad.Next() {
+		switch ad.Type() {
 		case unix.NDA_LLADDR:
-			entry.Lladdr = net.HardwareAddr(attr.Data)
+			entry.Lladdr = net.HardwareAddr(ad.Bytes())
 		case unix.NDA_MASTER:
-			entry.Master = int(nlenc.Uint32(attr.Data))
+			entry.Master = int(ad.Uint32())
 		}
+	}
+	if err := ad.Err(); err != nil {
+		return nil, false, err
 	}
 	return &entry, true, nil
 }
