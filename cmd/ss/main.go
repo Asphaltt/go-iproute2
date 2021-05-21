@@ -54,6 +54,7 @@ func main() {
 		fmt.Println("failed to create netlink socket, err:", err)
 		return
 	}
+	defer c.Close()
 
 	showSocketInfoHeader()
 	if config.tcp {
