@@ -5,12 +5,32 @@ import (
 	"os"
 
 	"github.com/Asphaltt/go-iproute2"
-	"github.com/Asphaltt/go-iproute2/ss"
 	"github.com/mdlayher/netlink"
 )
 
+type client struct {
+	conn *netlink.Conn
+}
+
+func dialNetlink() (*client, error) {
+	conn, err := netlink.Dial(iproute2.FamilySocketMonitoring, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return &client{conn}, nil
+}
+
+func (c *client) Close() error {
+	if c.conn != nil {
+		return c.conn.Close()
+	}
+	return nil
+}
+
 var config struct {
-	tcp bool
+	listen bool
+	tcp    bool
 }
 
 func main() {
@@ -21,34 +41,27 @@ func main() {
 
 		for _, b := range arg[1:] {
 			switch b {
+			case 'l':
+				config.listen = true
 			case 't':
 				config.tcp = true
 			}
 		}
 	}
 
+	c, err := dialNetlink()
+	if err != nil {
+		fmt.Println("failed to create netlink socket, err:", err)
+		return
+	}
+
 	showSocketInfoHeader()
 	if config.tcp {
-		showTCP()
-	}
-}
-
-func showTCP() {
-	conn, err := netlink.Dial(iproute2.FamilySocketMonitoring, nil)
-	if err != nil {
-		fmt.Println("failed to dial a socket monitoring netlink connection, err:", err)
-		return
-	}
-	defer conn.Close()
-
-	entries, err := ss.ListTcpConns(conn)
-	if err != nil {
-		fmt.Println("failed to list tcp connections, err:", err)
-		return
-	}
-
-	for _, e := range entries {
-		fmt.Println(e.String())
+		if config.listen {
+			c.showTCPListeners()
+		} else {
+			c.showTCPConns()
+		}
 	}
 }
 
