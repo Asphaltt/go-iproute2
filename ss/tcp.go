@@ -38,8 +38,8 @@ func isZeroIPv6Addr(addr net.IP) bool {
 func (e *TcpEntry) String() string {
 	var laddr string
 	if e.Ifindex == 0 {
-		if !e.IsIPv4 && isZeroIPv6Addr(e.LocalAddr) {
-			laddr = "[::]"
+		if !e.IsIPv4 {
+			laddr = fmt.Sprintf("[%s]", e.LocalAddr.To16().String())
 		} else {
 			laddr = e.LocalAddr.String()
 		}
@@ -71,10 +71,19 @@ func (e *TcpEntry) String() string {
 	)
 }
 
-// ListTcpConns retrieves all tcp connections from kernel.
-func (c *Client) ListTcpConns() ([]*TcpEntry, error) {
+// ListTcp4Conns retrieves all tcp connections from kernel.
+func (c *Client) ListTcp4Conns() ([]*TcpEntry, error) {
 	var req iproute2.InetDiagReq
 	req.Family = syscall.AF_INET
+	req.Protocol = syscall.IPPROTO_TCP
+	req.States = uint32(iproute2.Conn)
+	return c.listTcpSockets(&req)
+}
+
+// ListTcp6Conns retrieves all tcp connections from kernel.
+func (c *Client) ListTcp6Conns() ([]*TcpEntry, error) {
+	var req iproute2.InetDiagReq
+	req.Family = syscall.AF_INET6
 	req.Protocol = syscall.IPPROTO_TCP
 	req.States = uint32(iproute2.Conn)
 	return c.listTcpSockets(&req)

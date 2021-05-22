@@ -29,11 +29,15 @@ func (c *client) Close() error {
 }
 
 var config struct {
+	v4, v6 bool
 	listen bool
 	tcp    bool
 }
 
 func main() {
+	config.v4 = true
+	config.v6 = true
+
 	for _, arg := range os.Args[1:] {
 		if arg[0] != '-' {
 			continue
@@ -41,6 +45,12 @@ func main() {
 
 		for _, b := range arg[1:] {
 			switch b {
+			case '4':
+				config.v4 = true
+				config.v6 = false
+			case '6':
+				config.v4 = false
+				config.v6 = true
 			case 'l':
 				config.listen = true
 			case 't':
@@ -59,9 +69,9 @@ func main() {
 	showSocketInfoHeader()
 	if config.tcp {
 		if config.listen {
-			c.showTCPListeners()
+			c.showTCPListeners(config.v4, config.v6)
 		} else {
-			c.showTCPConns()
+			c.showTCPConns(config.v4, config.v6)
 		}
 	}
 }
