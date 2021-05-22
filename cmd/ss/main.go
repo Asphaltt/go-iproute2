@@ -3,35 +3,34 @@ package main
 import (
 	"fmt"
 	"os"
-
-	"github.com/Asphaltt/go-iproute2"
-	"github.com/mdlayher/netlink"
 )
-
-type client struct {
-	conn *netlink.Conn
-}
-
-func dialNetlink() (*client, error) {
-	conn, err := netlink.Dial(iproute2.FamilySocketMonitoring, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return &client{conn}, nil
-}
-
-func (c *client) Close() error {
-	if c.conn != nil {
-		return c.conn.Close()
-	}
-	return nil
-}
 
 var config struct {
 	v4, v6 bool
 	listen bool
 	tcp    bool
+	udp    bool
+}
+
+func isMixConfig() bool {
+	isMix := func(predicts ...bool) bool {
+		count := 0
+		for _, p := range predicts {
+			if !p {
+				continue
+			}
+
+			count++
+			if count == 2 {
+				return true
+			}
+		}
+		return false
+	}
+	return isMix(
+		config.tcp,
+		config.udp,
+	)
 }
 
 func main() {
@@ -55,6 +54,8 @@ func main() {
 				config.listen = true
 			case 't':
 				config.tcp = true
+			case 'u':
+				config.udp = true
 			}
 		}
 	}
@@ -66,19 +67,11 @@ func main() {
 	}
 	defer c.Close()
 
-	showSocketInfoHeader()
-	if config.tcp {
-		if config.listen {
-			c.showTCPListeners(config.v4, config.v6)
-		} else {
-			c.showTCPConns(config.v4, config.v6)
-		}
+	c.showSocketInfoHeader()
+	if config.udp {
+		c.showUDP(config.listen, config.v4, config.v6)
 	}
-}
-
-func showSocketInfoHeader() {
-	// "State     Recv-Q     Send-Q     Local Address:Port     Peer Address:Port"
-	fmt.Printf("%-10s     %-6s     %-6s    %24s:%-5s     %24s:%-5s\n",
-		"State", "Recv-Q", "Send-Q",
-		"Local Address", "Port", "Peer Address", "Port")
+	if config.tcp {
+		c.showTCP(config.listen, config.v4, config.v6)
+	}
 }
