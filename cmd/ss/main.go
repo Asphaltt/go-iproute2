@@ -6,6 +6,8 @@ import (
 )
 
 var config struct {
+	summary bool
+
 	v4, v6 bool
 	listen bool
 	tcp    bool
@@ -33,6 +35,21 @@ func isMixConfig() bool {
 	)
 }
 
+func noSock() bool {
+	notToListSockets := func(predicts ...bool) bool {
+		for _, p := range predicts {
+			if p {
+				return false
+			}
+		}
+		return true
+	}
+	return notToListSockets(
+		config.tcp,
+		config.udp,
+	)
+}
+
 func main() {
 	config.v4 = true
 	config.v6 = true
@@ -44,6 +61,8 @@ func main() {
 
 		for _, b := range arg[1:] {
 			switch b {
+			case 's':
+				config.summary = true
 			case '4':
 				config.v4 = true
 				config.v6 = false
@@ -58,6 +77,22 @@ func main() {
 				config.udp = true
 			}
 		}
+	}
+
+	if config.summary {
+		showSummary()
+	}
+
+	if noSock() {
+		if config.summary || !config.listen {
+			return
+		}
+
+		// list all listening sockets
+		config.udp = true
+		config.tcp = true
+		config.v4 = true
+		config.v6 = true
 	}
 
 	c, err := dialNetlink()
