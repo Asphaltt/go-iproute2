@@ -7,6 +7,7 @@ Some net tools of iproute2 implement with Go.
 ### bridge
 
 1. bridge monitor fdb
+2. bridge fdb list
 
 ### ss
 

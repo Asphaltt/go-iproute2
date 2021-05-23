@@ -1,9 +1,11 @@
 package bridge
 
 import (
+	"math/bits"
 	"net"
 	"unsafe"
 
+	"github.com/Asphaltt/go-iproute2"
 	"github.com/mdlayher/netlink"
 )
 
@@ -17,33 +19,118 @@ const (
 	FdbActionDel
 )
 
+type FdbFlag uint8
+
+const (
+	Use FdbFlag = 1 << iota
+	Self
+	Master
+	Proxy
+	ExtLearned
+	Offloaded
+	Sticky
+	Router
+)
+
+func (f FdbFlag) String() string {
+	if f == 0 {
+		return ""
+	}
+	flags := [...]string{
+		"use",
+		"self",
+		"master",
+		"proxy",
+		"extern_learn",
+		"offload",
+		"sticky",
+		"router",
+	}
+	index := bits.TrailingZeros8(uint8(f))
+	return flags[index]
+}
+
+type FdbState uint16
+
+const (
+	Incomplete FdbState = 1 << iota
+	Reachable
+	Stale
+	Delay
+	Probe
+	Failed
+	NoArp
+	Permanent
+	None FdbState = 0
+)
+
+func (s FdbState) String() string {
+	if s == None {
+		return "none"
+	}
+	states := [...]string{
+		"incomplete",
+		"reachable",
+		"stale",
+		"delay",
+		"probe",
+		"failed",
+		"noarp",
+		"permanent",
+	}
+	index := bits.TrailingZeros16(uint16(s))
+	return states[index]
+}
+
 // FdbEntry contains fdb messages for bridge fdb.
 type FdbEntry struct {
 	Action  FdbActionType
+	State   FdbState
+	Flag    FdbFlag
 	Ifindex int
 	Lladdr  net.HardwareAddr
 	Master  int
 }
 
-// NdMsg is copied from golang.org/x/sys/unix/ztypes_linux.go
-type NdMsg struct {
-	Family  uint8
-	Pad1    uint8
-	Pad2    uint16
-	Ifindex int32
-	State   uint16
-	Flags   uint8
-	Type    uint8
-}
+func ListFdb() ([]*FdbEntry, error) {
+	conn, err := netlink.Dial(iproute2.NETLINK_ROUTE, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
 
-const SizeofNdMsg = 0xc
+	var ndMsg iproute2.NdMsg
+	ndMsg.Family = iproute2.PF_BRIDGE
+
+	var msg netlink.Message
+	msg.Header.Type = iproute2.RTM_GETNEIGH
+	msg.Header.Flags = netlink.Dump | netlink.Request
+	msg.Data, _ = ndMsg.MarshalBinary()
+
+	msgs, err := conn.Execute(msg)
+	if err != nil {
+		return nil, err
+	}
+
+	var entries []*FdbEntry
+	for _, msg := range msgs {
+		e, ok, err := parseFdbMsg(msg)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			entries = append(entries, e)
+		}
+	}
+	return entries, nil
+}
 
 // MonitorFdb monitors bridge fdb entry's adding and deleting.
 func MonitorFdb(fdbHandler func(*FdbEntry)) error {
 	nlcfg := &netlink.Config{
-		Groups: RTNLGRP_NEIGH,
+		Groups: iproute2.RTNLGRP_NEIGH,
 	}
-	conn, err := netlink.Dial(NETLINK_ROUTE, nlcfg)
+	conn, err := netlink.Dial(iproute2.NETLINK_ROUTE, nlcfg)
 	if err != nil {
 		return err
 	}
@@ -52,8 +139,8 @@ func MonitorFdb(fdbHandler func(*FdbEntry)) error {
 	// join the neighbour group.
 	// see: https://elixir.bootlin.com/linux/latest/source/net/bridge/br_fdb.c#L729
 	//      fdb_notify function.
-	_ = conn.JoinGroup(RTNLGRP_NEIGH)
-	defer conn.LeaveGroup(RTNLGRP_NEIGH)
+	_ = conn.JoinGroup(iproute2.RTNLGRP_NEIGH)
+	defer conn.LeaveGroup(iproute2.RTNLGRP_NEIGH)
 
 	for {
 		msgs, err := conn.Receive()
@@ -79,8 +166,8 @@ func parseFdbMsg(msg netlink.Message) (*FdbEntry, bool, error) {
 	// fdb_insert function calls fdb_notify with RTM_NEWNEIGH
 	// https://elixir.bootlin.com/linux/latest/source/net/bridge/br_fdb.c#L196
 	// fdb_delete function calls fdb_notify with RTM_DELNEIGH
-	if msg.Header.Type != RTM_NEWNEIGH &&
-		msg.Header.Type != RTM_DELNEIGH {
+	if msg.Header.Type != iproute2.RTM_NEWNEIGH &&
+		msg.Header.Type != iproute2.RTM_DELNEIGH {
 		return nil, false, nil
 	}
 
@@ -89,24 +176,26 @@ func parseFdbMsg(msg netlink.Message) (*FdbEntry, bool, error) {
 	//      print_fdb
 
 	data := msg.Data
-	if len(data) < SizeofNdMsg {
+	if len(data) < iproute2.SizeofNdMsg {
 		return nil, false, nil
 	}
 
-	ndmsg := (*NdMsg)(unsafe.Pointer(&data[0]))
-	if ndmsg.Family != AF_BRIDGE {
+	ndmsg := (*iproute2.NdMsg)(unsafe.Pointer(&data[0]))
+	if ndmsg.Family != iproute2.AF_BRIDGE {
 		return nil, false, nil
 	}
 
 	var entry FdbEntry
 	entry.Ifindex = int(ndmsg.Ifindex)
-	if msg.Header.Type == RTM_NEWNEIGH {
+	entry.State = FdbState(ndmsg.State)
+	entry.Flag = FdbFlag(ndmsg.Flags)
+	if msg.Header.Type == iproute2.RTM_NEWNEIGH {
 		entry.Action = FdbActionAdd
 	} else {
 		entry.Action = FdbActionDel
 	}
 
-	data = data[SizeofNdMsg:]
+	data = data[iproute2.SizeofNdMsg:]
 	// netlink.Attribute describes all types of attribute in netlink message,
 	// including struct rtattr.
 	// the following attributes are rtattr.
@@ -118,9 +207,9 @@ func parseFdbMsg(msg netlink.Message) (*FdbEntry, bool, error) {
 	}
 	for ad.Next() {
 		switch ad.Type() {
-		case NDA_LLADDR:
+		case iproute2.NDA_LLADDR:
 			entry.Lladdr = net.HardwareAddr(ad.Bytes())
-		case NDA_MASTER:
+		case iproute2.NDA_MASTER:
 			entry.Master = int(ad.Uint32())
 		}
 	}

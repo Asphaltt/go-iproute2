@@ -81,3 +81,23 @@ func (msg *InetDiagMsg) UnmarshalBinary(data []byte) error {
 
 	return nil
 }
+
+// NdMsg is copied from golang.org/x/sys/unix/ztypes_linux.go
+type NdMsg struct {
+	Family  uint8
+	Pad1    uint8
+	Pad2    uint16
+	Ifindex int32
+	State   uint16
+	Flags   uint8
+	Type    uint8
+}
+
+func (m *NdMsg) MarshalBinary() ([]byte, error) {
+	var dataSlice reflect.SliceHeader
+	dataSlice.Len = SizeofNdMsg
+	dataSlice.Cap = SizeofNdMsg
+	dataSlice.Data = uintptr(unsafe.Pointer(m))
+	data := *(*[]byte)(unsafe.Pointer(&dataSlice))
+	return data, nil
+}

@@ -12,15 +12,24 @@ func main() {
 	monitorCmd := &cobra.Command{
 		Use: "monitor",
 	}
-
-	fdbCmd := &cobra.Command{
+	monitorCmd.AddCommand(&cobra.Command{
 		Use: "fdb",
 		Run: func(cmd *cobra.Command, args []string) {
 			monitorFdb()
 		},
-	}
+	})
 
-	monitorCmd.AddCommand(fdbCmd)
+	fdbCmd := &cobra.Command{
+		Use: "fdb",
+	}
+	fdbCmd.AddCommand(&cobra.Command{
+		Use: "list",
+		Run: func(cmd *cobra.Command, args []string) {
+			listFdb()
+		},
+	})
+
+	rootCmd.AddCommand(fdbCmd)
 	rootCmd.AddCommand(monitorCmd)
 	rootCmd.Execute()
 }
