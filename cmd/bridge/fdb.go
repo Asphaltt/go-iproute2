@@ -8,8 +8,9 @@ import (
 	"github.com/Asphaltt/go-iproute2/bridge"
 )
 
-func listFdb() {
-	entries, err := bridge.ListFdb()
+func (c *client) listFdb() {
+	bcli := bridge.New(c.conn)
+	entries, err := bcli.ListFdb()
 	if err != nil {
 		fmt.Println("failed to list fdb entries, err:", err)
 		return
@@ -36,8 +37,9 @@ func printListFdb(e *bridge.FdbEntry) {
 	fmt.Println(b.String())
 }
 
-func monitorFdb() {
-	err := bridge.MonitorFdb(printFdbEntry)
+func (c *client) monitorFdb() {
+	bcli := bridge.New(c.conn)
+	err := bcli.MonitorFdb(printFdbEntry)
 	if err != nil {
 		fmt.Println("failed to bridge monitor fdb, err:", err)
 	}

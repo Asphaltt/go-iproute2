@@ -101,3 +101,19 @@ func (m *NdMsg) MarshalBinary() ([]byte, error) {
 	data := *(*[]byte)(unsafe.Pointer(&dataSlice))
 	return data, nil
 }
+
+// A NdAttrCacheInfo is the cache info in the neighbour/fdb message.
+type NdAttrCacheInfo struct {
+	Confirmed uint32
+	Used      uint32
+	Updated   uint32
+	RefCount  uint32
+}
+
+func (c *NdAttrCacheInfo) UnmarshalBinary(data []byte) error {
+	dataSlice := (*reflect.SliceHeader)(unsafe.Pointer(&data))
+	newCacheInfo := (*NdAttrCacheInfo)(unsafe.Pointer(dataSlice.Data))
+	*c = *newCacheInfo
+
+	return nil
+}

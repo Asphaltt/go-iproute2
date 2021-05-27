@@ -8,11 +8,13 @@ import (
 	"github.com/mdlayher/netlink"
 )
 
+// A Client can manipulate ss netlink interface.
 type Client struct {
 	conn *netlink.Conn
 }
 
-func NewClient(conn *netlink.Conn) *Client {
+// New creates a Client which can issue ss commands.
+func New(conn *netlink.Conn) *Client {
 	return &Client{
 		conn: conn,
 	}

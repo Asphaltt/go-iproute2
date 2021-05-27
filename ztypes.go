@@ -1,14 +1,13 @@
 package iproute2
 
+import "math/bits"
+
 // Copying code is to avoid code for different OS platforms.
 
 // copied from syscall
 const (
 	AF_BRIDGE = 0x7
 	PF_BRIDGE = AF_BRIDGE
-
-	NDA_LLADDR = 0x2
-	NDA_MASTER = 0x9
 )
 
 // copied from golang.org/x/sys/unix
@@ -118,4 +117,88 @@ func (s SockStateType) String() string {
 	default:
 		return "UNKNOWN"
 	}
+}
+
+type NdAttrType uint16
+
+// types for error message attribute
+const (
+	NdaUnspec NdAttrType = iota
+	NdaDst
+	NdaLladdr
+	NdaCacheInfo
+	NdaProbes
+	NdaVlan
+	NdaPort
+	NdaVNI
+	NdaIfindex
+	NdaMaster
+	NdaLinkNetNSID
+	NdaSrcVNI
+	NdaProtocol
+	NdaNhID
+	NdaFdbExtAttrs
+)
+
+type NtfFlag uint8
+
+const (
+	NtfUse NtfFlag = 1 << iota
+	NtfSelf
+	NtfMaster
+	NtfProxy
+	NtfExtLearned
+	NtfOffloaded
+	NtfSticky
+	NtfRouter
+)
+
+func (f NtfFlag) String() string {
+	if f == 0 {
+		return ""
+	}
+	flags := [...]string{
+		"use",
+		"self",
+		"master",
+		"proxy",
+		"extern_learn",
+		"offload",
+		"sticky",
+		"router",
+	}
+	index := bits.TrailingZeros8(uint8(f))
+	return flags[index]
+}
+
+type NudState uint16
+
+const (
+	NudIncomplete NudState = 1 << iota
+	NudReachable
+	NudStale
+	NudDelay
+	NudProbe
+	NudFailed
+	NudNoArp
+	NudPermanent
+	NudNone NudState = 0
+)
+
+func (s NudState) String() string {
+	if s == NudNone {
+		return "none"
+	}
+	states := [...]string{
+		"incomplete",
+		"reachable",
+		"stale",
+		"delay",
+		"probe",
+		"failed",
+		"noarp",
+		"permanent",
+	}
+	index := bits.TrailingZeros16(uint16(s))
+	return states[index]
 }

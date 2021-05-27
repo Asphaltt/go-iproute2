@@ -15,7 +15,7 @@ func (c *client) showTCP(listen, tcp4, tcp6 bool) {
 }
 
 func (c *client) showTCPConns(tcp4, tcp6 bool) {
-	sc := ss.NewClient(c.conn)
+	sc := ss.New(c.conn)
 	if tcp4 {
 		c.showTCP4Conns(sc)
 	}
@@ -40,7 +40,7 @@ func (c *client) showTCPListeners(tcp4, tcp6 bool) {
 	if c.mix {
 		c.netid = "tcp"
 	}
-	sc := ss.NewClient(c.conn)
+	sc := ss.New(c.conn)
 	if tcp4 {
 		c.showTCP4Listeners(sc)
 	}
