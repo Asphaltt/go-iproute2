@@ -57,6 +57,9 @@ func main() {
 
 	fdbCmd := &cobra.Command{
 		Use: "fdb",
+		Run: func(cmd *cobra.Command, args []string) {
+			cli.runCmd(cli.listFdb)
+		},
 	}
 	fdbCmd.AddCommand(&cobra.Command{
 		Use: "list",

@@ -4,6 +4,11 @@ Some net tools of iproute2 implement with Go.
 
 ## Completions
 
+### ip
+
+1. ip neigh list
+2. ip link list
+
 ### bridge
 
 1. bridge monitor fdb
