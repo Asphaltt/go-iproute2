@@ -38,7 +38,7 @@ func (c *Client) ListNeighbours() ([]*NeighEntry, error) {
 		if msg.Header.Type != iproute2.RTM_NEWNEIGH {
 			continue
 		}
-		if msg.Header.Length < iproute2.SizeofNdMsg {
+		if msg.Header.Length < uint32(iproute2.SizeofNdMsg) {
 			continue
 		}
 

@@ -10,8 +10,8 @@ import (
 )
 
 func (c *client) listNeighbours() {
-	ipCli := ip.New(c.conn)
-	entries, err := ipCli.ListNeighbours()
+	ipcli := ip.New(c.conn)
+	entries, err := ipcli.ListNeighbours()
 	if err != nil {
 		fmt.Println("failed to list neighbour entries, err:", err)
 		return

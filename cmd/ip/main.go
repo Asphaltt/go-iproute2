@@ -38,6 +38,9 @@ func main() {
 
 	neighCmd := &cobra.Command{
 		Use: "neigh",
+		Run: func(cmd *cobra.Command, args []string) {
+			cli.runCmd(cli.listNeighbours)
+		},
 	}
 	neighCmd.AddCommand(&cobra.Command{
 		Use: "list",
@@ -46,6 +49,20 @@ func main() {
 		},
 	})
 
+	linkCmd := &cobra.Command{
+		Use: "link",
+		Run: func(cmd *cobra.Command, args []string) {
+			cli.runCmd(cli.listLinks)
+		},
+	}
+	linkCmd.AddCommand(&cobra.Command{
+		Use: "list",
+		Run: func(cmd *cobra.Command, args []string) {
+			cli.runCmd(cli.listLinks)
+		},
+	})
+
 	rootCmd.AddCommand(neighCmd)
+	rootCmd.AddCommand(linkCmd)
 	rootCmd.Execute()
 }

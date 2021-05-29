@@ -21,10 +21,6 @@ const (
 	RTNLGRP_NEIGH = 0x3
 )
 
-const (
-	SizeofNdMsg = 0xc
-)
-
 // families for netlink socket
 const (
 	FamilySocketMonitoring = 0x0004
@@ -202,3 +198,22 @@ func (s NudState) String() string {
 	index := bits.TrailingZeros16(uint16(s))
 	return states[index]
 }
+
+// copied from src/cmd/vendor/golang.org/x/sys/unix/ztypes_linux.go
+// TODO(Asphaltt): use ztypes_linux.go instead
+const (
+	IFLA_EXT_MASK = 0x1d
+)
+
+/* New extended info filters for IFLA_EXT_MASK */
+type RtTextFilterType int
+
+const (
+	RTEXT_FILTER_VF RtTextFilterType = 1 << iota
+	RTEXT_FILTER_BRVLAN
+	RTEXT_FILTER_BRVLAN_COMPRESSED
+	RTEXT_FILTER_SKIP_STATS
+	RTEXT_FILTER_MRP
+	RTEXT_FILTER_CFM_CONFIG
+	RTEXT_FILTER_CFM_STATUS
+)

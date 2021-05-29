@@ -7,10 +7,12 @@ import (
 	"unsafe"
 )
 
-// size of inet diag structures.
-var (
+// size of some structures.
+const (
 	SizeofInetDiagReq = int(unsafe.Sizeof(InetDiagReq{}))
 	SizeofInetDiagMsg = int(unsafe.Sizeof(InetDiagMsg{}))
+	SizeofIfInfoMsg   = int(unsafe.Sizeof(IfInfoMsg{}))
+	SizeofNdMsg       = int(unsafe.Sizeof(NdMsg{}))
 )
 
 // An InetDiagReq is a request message for sock diag netlink.
@@ -51,13 +53,7 @@ type InetDiagSockID struct {
 
 // MarshalBinary marshals an inet diag request message as byte slice.
 func (req *InetDiagReq) MarshalBinary() (data []byte, err error) {
-	length := SizeofInetDiagReq
-	var dataSlice reflect.SliceHeader
-	dataSlice.Len = length
-	dataSlice.Cap = length
-	dataSlice.Data = uintptr(unsafe.Pointer(req))
-	data = *(*[]byte)(unsafe.Pointer(&dataSlice))
-
+	data = struct2bytes(unsafe.Pointer(req), SizeofInetDiagReq)
 	be, offset := binary.BigEndian, 8
 	be.PutUint16(data[offset:], req.Sport)
 	be.PutUint16(data[offset+2:], req.Dport)
@@ -94,12 +90,7 @@ type NdMsg struct {
 }
 
 func (m *NdMsg) MarshalBinary() ([]byte, error) {
-	var dataSlice reflect.SliceHeader
-	dataSlice.Len = SizeofNdMsg
-	dataSlice.Cap = SizeofNdMsg
-	dataSlice.Data = uintptr(unsafe.Pointer(m))
-	data := *(*[]byte)(unsafe.Pointer(&dataSlice))
-	return data, nil
+	return struct2bytes(unsafe.Pointer(m), SizeofNdMsg), nil
 }
 
 // A NdAttrCacheInfo is the cache info in the neighbour/fdb message.
@@ -111,9 +102,44 @@ type NdAttrCacheInfo struct {
 }
 
 func (c *NdAttrCacheInfo) UnmarshalBinary(data []byte) error {
-	dataSlice := (*reflect.SliceHeader)(unsafe.Pointer(&data))
-	newCacheInfo := (*NdAttrCacheInfo)(unsafe.Pointer(dataSlice.Data))
-	*c = *newCacheInfo
+	sizeof := int(unsafe.Sizeof(*c))
+	if len(data) < sizeof {
+		return errors.New("NdAttrCacheInfo: not enough data to unmarshal")
+	}
 
+	newCacheInfo := (*NdAttrCacheInfo)(unsafe.Pointer(&data[0]))
+	*c = *newCacheInfo
 	return nil
+}
+
+// IfInfoMsg = typeof unix.IfInfoMsg
+type IfInfoMsg struct {
+	Family  uint8
+	_Pad    uint8
+	Type    uint16
+	Ifindex uint32
+	Flags   uint32
+	Change  uint32
+}
+
+func (m *IfInfoMsg) MarshalBinary() ([]byte, error) {
+	return struct2bytes(unsafe.Pointer(m), SizeofIfInfoMsg), nil
+}
+
+func (m *IfInfoMsg) UnmarshalBinary(data []byte) error {
+	if len(data) < SizeofIfInfoMsg {
+		return errors.New("IfInfoMsg: not enough data to unmarshal")
+	}
+
+	newIfiMsg := (*IfInfoMsg)(unsafe.Pointer(&data[0]))
+	*m = *newIfiMsg
+	return nil
+}
+
+func struct2bytes(p unsafe.Pointer, length int) []byte {
+	var dataSlice reflect.SliceHeader
+	dataSlice.Len = length
+	dataSlice.Cap = length
+	dataSlice.Data = uintptr(p)
+	return *(*[]byte)(unsafe.Pointer(&dataSlice))
 }
