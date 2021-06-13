@@ -13,6 +13,7 @@ const (
 	procSnmp      = "/proc/net/snmp"
 )
 
+// Summary is the kernel sockets' statistics.
 type Summary struct {
 	Sockets    int
 	TcpMem     int
@@ -50,10 +51,14 @@ func (s *Summary) parseLine(line string, fields ...*int) {
 	}
 }
 
+// GetSockStat reads IPv4 socket statistics data from
+// */proc/net/sockstat*.
 func (s *Summary) GetSockStat() error {
 	return s.getSockStat(procSockStat)
 }
 
+// GetSockStat6 reads IPv6 socket statistics data from
+// */proc/net/sockstat6*.
 func (s *Summary) GetSockStat6() error {
 	return s.getSockStat(procSockStat6)
 }
@@ -93,6 +98,8 @@ func (s *Summary) getSockStat(stat string) error {
 	return scanner.Err()
 }
 
+// GetTcpEstablished gets the number of established tcp connections
+// from */proc/net/snmp*.
 func (s *Summary) GetTcpEstablished() error {
 	fd, err := os.Open(procSnmp)
 	if err != nil {

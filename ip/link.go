@@ -14,6 +14,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+// LinkRxErrors is the rx error statistics of the link.
 type LinkRxErrors struct {
 	Length             uint64
 	RingBufferOverflow uint64
@@ -23,6 +24,7 @@ type LinkRxErrors struct {
 	MissedPacket       uint64
 }
 
+// LinkTxErrors is the tx error statistics of the link.
 type LinkTxErrors struct {
 	Abort     uint64
 	Carrier   uint64
@@ -31,6 +33,8 @@ type LinkTxErrors struct {
 	Window    uint64
 }
 
+// LinkStat is the packet statistis of the link,
+// including rx error statistics and tx error statistics.
 type LinkStat struct {
 	RxPackets   uint64
 	TxPackets   uint64
@@ -46,6 +50,7 @@ type LinkStat struct {
 	LinkTxErrors
 }
 
+// UnmarshalBinary gets a LinkStat from a byte slice.
 func (s *LinkStat) UnmarshalBinary(data []byte) error {
 	sizeof := int(unsafe.Sizeof(*s))
 	if len(data) < sizeof {
@@ -57,8 +62,10 @@ func (s *LinkStat) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
+// LinkFlags is the type of link flag.
 type LinkFlags uint32
 
+// String returns the string description of the LinkStat.
 func (f LinkFlags) String() string {
 	flags := []struct {
 		flag uint32
@@ -102,9 +109,12 @@ func (f LinkFlags) String() string {
 	return "<" + strings.Join(s, ",") + ">"
 }
 
+// LinkType is the type of link type.
 type LinkType int
 
+// String returns the string description of the LinkType.
 func (t LinkType) String() string {
+	// the array is copied from iproute2 C source code
 	types := []struct {
 		typ  int
 		name string
@@ -194,8 +204,10 @@ func (t LinkType) String() string {
 	return strconv.Itoa(int(t))
 }
 
+// LinkOperState is the type of link operstate.
 type LinkOperState int
 
+// String returns the string description of the LinkOperState.
 func (s LinkOperState) String() string {
 	operStates := []string{
 		"UNKNOWN",
@@ -212,8 +224,10 @@ func (s LinkOperState) String() string {
 	return operStates[s]
 }
 
+// LinkMode is the type of link mode.
 type LinkMode uint8
 
+// String returns the string description of the LinkMode.
 func (m LinkMode) String() string {
 	modes := []string{"DEFAULT", "DORMANT"}
 	if int(m) >= len(modes) {
@@ -222,8 +236,11 @@ func (m LinkMode) String() string {
 	return modes[m]
 }
 
+// LinkGroup is the type of link group.
 type LinkGroup int
 
+// String returns the string description of the LinkGroup.
+// The group information is from */etc/iproute2/group*.
 func (g LinkGroup) String() string {
 	fd, err := os.Open("/etc/iproute2/group")
 	if err != nil {
@@ -249,6 +266,10 @@ func (g LinkGroup) String() string {
 	return ""
 }
 
+// A LinkEntry contains information for the link from kernel，
+// like ifindex, name, link state, link type and so on.
+// It should includes all information from executing command
+// `ip link list`.
 type LinkEntry struct {
 	DeviceType       LinkType
 	DeviceFlags      LinkFlags
@@ -284,12 +305,19 @@ type LinkEntry struct {
 	AFSpec           []byte
 }
 
+// init initiates the LinkEntry to set some fields to
+// value `-1`, in order to indicates that the fields
+// are not included in the netlink response message.
 func (e *LinkEntry) init() {
 	e.Namespace = -1
 	e.Group = -1
 	e.OperState = -1
 }
 
+// ListLinks gets all links information from kernel by netlink interface.
+// Firstly, send a getting link request, and receive all netlink
+// response messages. Secondly, parse link information from every netlink
+// response messages one by one.
 func (c *Client) ListLinks() ([]*LinkEntry, error) {
 	var msg netlink.Message
 	msg.Header.Type = unix.RTM_GETLINK
@@ -327,6 +355,7 @@ func (c *Client) ListLinks() ([]*LinkEntry, error) {
 	return entries, nil
 }
 
+// parseLinkMsg parses a link information from a netlink message.
 func parseLinkMsg(msg *netlink.Message) (*LinkEntry, bool, error) {
 	var ifimsg iproute2.IfInfoMsg
 	if err := ifimsg.UnmarshalBinary(msg.Data); err != nil {
@@ -335,7 +364,7 @@ func parseLinkMsg(msg *netlink.Message) (*LinkEntry, bool, error) {
 
 	var e LinkEntry
 	e.init()
-	e.Ifindex = int(ifimsg.Ifindex)
+	e.Ifindex = int(ifimsg.Index)
 	e.DeviceType = LinkType(ifimsg.Type)
 	e.DeviceFlags = LinkFlags(ifimsg.Flags)
 

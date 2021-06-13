@@ -18,6 +18,9 @@ type NeighEntry struct {
 }
 
 // ListNeighbours dumps arp table from kernel.
+// Firstly, send a getting neighbour request, and receive all netlink
+// response messages. Secondly, parse neighbour information from every
+// netlink response messages one by one.
 func (c *Client) ListNeighbours() ([]*NeighEntry, error) {
 	var ndmsg iproute2.NdMsg
 	ndmsg.Family = syscall.AF_UNSPEC

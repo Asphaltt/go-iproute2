@@ -5,14 +5,16 @@ import (
 	"errors"
 	"reflect"
 	"unsafe"
+
+	"golang.org/x/sys/unix"
 )
 
 // size of some structures.
 const (
 	SizeofInetDiagReq = int(unsafe.Sizeof(InetDiagReq{}))
 	SizeofInetDiagMsg = int(unsafe.Sizeof(InetDiagMsg{}))
-	SizeofIfInfoMsg   = int(unsafe.Sizeof(IfInfoMsg{}))
-	SizeofNdMsg       = int(unsafe.Sizeof(NdMsg{}))
+	SizeofIfInfoMsg   = unix.SizeofIfInfomsg
+	SizeofNdMsg       = unix.SizeofNdMsg
 )
 
 // An InetDiagReq is a request message for sock diag netlink.
@@ -51,7 +53,7 @@ type InetDiagSockID struct {
 	Cookie  [2]uint32
 }
 
-// MarshalBinary marshals an inet diag request message as byte slice.
+// MarshalBinary marshals an inet diag request message to byte slice.
 func (req *InetDiagReq) MarshalBinary() (data []byte, err error) {
 	data = struct2bytes(unsafe.Pointer(req), SizeofInetDiagReq)
 	be, offset := binary.BigEndian, 8
@@ -78,17 +80,11 @@ func (msg *InetDiagMsg) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
-// NdMsg is copied from golang.org/x/sys/unix/ztypes_linux.go
-type NdMsg struct {
-	Family  uint8
-	Pad1    uint8
-	Pad2    uint16
-	Ifindex int32
-	State   uint16
-	Flags   uint8
-	Type    uint8
-}
+// NdMsg is a neighbour message,
+// that's an alias of golang.org/x/sys/unix.NdMsg
+type NdMsg unix.NdMsg
 
+// MarshalBinary marshals a neighbour message to byte slice.
 func (m *NdMsg) MarshalBinary() ([]byte, error) {
 	return struct2bytes(unsafe.Pointer(m), SizeofNdMsg), nil
 }
@@ -101,6 +97,8 @@ type NdAttrCacheInfo struct {
 	RefCount  uint32
 }
 
+// UnmarshalBinary unmarshals a neighbour attribute's cache info
+// from byte slice.
 func (c *NdAttrCacheInfo) UnmarshalBinary(data []byte) error {
 	sizeof := int(unsafe.Sizeof(*c))
 	if len(data) < sizeof {
@@ -112,20 +110,18 @@ func (c *NdAttrCacheInfo) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
-// IfInfoMsg = typeof unix.IfInfoMsg
-type IfInfoMsg struct {
-	Family  uint8
-	_Pad    uint8
-	Type    uint16
-	Ifindex uint32
-	Flags   uint32
-	Change  uint32
-}
+// IfInfoMsg is an interface information message,
+// that's an alias of golang.org/x/sys/unix.IfInfoMsg
+type IfInfoMsg unix.IfInfoMsg
 
+// MarshalBinary marshals an interface informat message
+// to byte slice.
 func (m *IfInfoMsg) MarshalBinary() ([]byte, error) {
 	return struct2bytes(unsafe.Pointer(m), SizeofIfInfoMsg), nil
 }
 
+// UnmarshalBinary unmarshals an interface information message
+// from byte slice.
 func (m *IfInfoMsg) UnmarshalBinary(data []byte) error {
 	if len(data) < SizeofIfInfoMsg {
 		return errors.New("IfInfoMsg: not enough data to unmarshal")
@@ -136,6 +132,7 @@ func (m *IfInfoMsg) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
+// struct2bytes converts forcely a struct to byte slice in place.
 func struct2bytes(p unsafe.Pointer, length int) []byte {
 	var dataSlice reflect.SliceHeader
 	dataSlice.Len = length
