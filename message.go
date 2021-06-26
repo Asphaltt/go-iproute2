@@ -11,10 +11,12 @@ import (
 
 // size of some structures.
 const (
-	SizeofInetDiagReq = int(unsafe.Sizeof(InetDiagReq{}))
-	SizeofInetDiagMsg = int(unsafe.Sizeof(InetDiagMsg{}))
-	SizeofIfInfoMsg   = unix.SizeofIfInfomsg
-	SizeofNdMsg       = unix.SizeofNdMsg
+	SizeofInetDiagReq  = int(unsafe.Sizeof(InetDiagReq{}))
+	SizeofInetDiagMsg  = int(unsafe.Sizeof(InetDiagMsg{}))
+	SizeofIfInfoMsg    = unix.SizeofIfInfomsg
+	SizeofIfAddrMsg    = unix.SizeofIfAddrmsg
+	SizeofIfaCacheinfo = unix.SizeofIfaCacheinfo
+	SizeofNdMsg        = unix.SizeofNdMsg
 )
 
 // An InetDiagReq is a request message for sock diag netlink.
@@ -111,10 +113,10 @@ func (c *NdAttrCacheInfo) UnmarshalBinary(data []byte) error {
 }
 
 // IfInfoMsg is an interface information message,
-// that's an alias of golang.org/x/sys/unix.IfInfoMsg
-type IfInfoMsg unix.IfInfoMsg
+// that's an alias of golang.org/x/sys/unix.IfInfomsg
+type IfInfoMsg unix.IfInfomsg
 
-// MarshalBinary marshals an interface informat message
+// MarshalBinary marshals an interface information message
 // to byte slice.
 func (m *IfInfoMsg) MarshalBinary() ([]byte, error) {
 	return struct2bytes(unsafe.Pointer(m), SizeofIfInfoMsg), nil
@@ -129,6 +131,50 @@ func (m *IfInfoMsg) UnmarshalBinary(data []byte) error {
 
 	newIfiMsg := (*IfInfoMsg)(unsafe.Pointer(&data[0]))
 	*m = *newIfiMsg
+	return nil
+}
+
+// IfAddrMsg is an interface address message,
+// that's an alias of golang.org/x/sys/unix.IfAddrmsg
+type IfAddrMsg unix.IfAddrmsg
+
+// MarshalBinary marshals an interface address message
+// to byte slice.
+func (m *IfAddrMsg) MarshalBinary() ([]byte, error) {
+	return struct2bytes(unsafe.Pointer(m), SizeofIfAddrMsg), nil
+}
+
+// UnmarshalBinary unmarshals an interface address message
+// from byte slice.
+func (m *IfAddrMsg) UnmarshalBinary(data []byte) error {
+	if len(data) < SizeofIfAddrMsg {
+		return errors.New("IfAddrMsg: not enough data to unmarshal")
+	}
+
+	newIfaMsg := (*IfAddrMsg)(unsafe.Pointer(&data[0]))
+	*m = *newIfaMsg
+	return nil
+}
+
+// IfaCacheinfo is an interface address information,
+// that's an alias of golang.org/x/sys/unix.IfaCacheinfo
+type IfaCacheinfo unix.IfaCacheinfo
+
+// MarshalBinary marshals an interface address information
+// to byte slice.
+func (m *IfaCacheinfo) MarshalBinary() ([]byte, error) {
+	return struct2bytes(unsafe.Pointer(m), SizeofIfaCacheinfo), nil
+}
+
+// UnmarshalBinary unmarshals an interface address information
+// from byte slice.
+func (m *IfaCacheinfo) UnmarshalBinary(data []byte) error {
+	if len(data) < SizeofIfaCacheinfo {
+		return errors.New("IfaCacheinfo: not enough data to unmarshal")
+	}
+
+	newIfaMsg := (*IfaCacheinfo)(unsafe.Pointer(&data[0]))
+	*m = *newIfaMsg
 	return nil
 }
 

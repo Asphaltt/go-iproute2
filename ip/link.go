@@ -309,6 +309,7 @@ type LinkEntry struct {
 // value `-1`, in order to indicates that the fields
 // are not included in the netlink response message.
 func (e *LinkEntry) init() {
+	e.Link = -1
 	e.Namespace = -1
 	e.Group = -1
 	e.OperState = -1

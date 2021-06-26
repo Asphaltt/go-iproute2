@@ -6,8 +6,40 @@ import (
 	"strings"
 
 	"github.com/Asphaltt/go-iproute2/ip"
+	"github.com/spf13/cobra"
 	"golang.org/x/sys/unix"
 )
+
+func linkCmd() *cobra.Command {
+	linkCmd := &cobra.Command{
+		Use:     "link",
+		Aliases: []string{"l", "li", "lin"},
+		Run: func(cmd *cobra.Command, args []string) {
+			cli.runCmd(cli.listLinks)
+		},
+	}
+	linkCmd.AddCommand(&cobra.Command{
+		Use:     "list",
+		Aliases: []string{"l", "li", "lis", "lst", "s", "sh", "sho", "show"},
+		Run: func(cmd *cobra.Command, args []string) {
+			cli.runCmd(cli.listLinks)
+		},
+	})
+	return linkCmd
+}
+
+func (c *client) getLinks(ipcli *ip.Client) (map[int]*ip.LinkEntry, error) {
+	entries, err := ipcli.ListLinks()
+	if err != nil {
+		return nil, err
+	}
+
+	links := make(map[int]*ip.LinkEntry)
+	for _, e := range entries {
+		links[e.Ifindex] = e
+	}
+	return links, nil
+}
 
 func (c *client) listLinks() {
 	ipcli := ip.New(c.conn)
@@ -29,13 +61,17 @@ func printLinkEntry(e *ip.LinkEntry) {
 
 	var s strings.Builder
 	s.WriteString(fmt.Sprintf("%d: ", e.Ifindex))
-	if e.Link != 0 {
+	if e.Link != -1 {
 		if e.Namespace >= 0 {
 			s.WriteString(fmt.Sprintf("%s@if%d: ", e.Name, e.Link))
 		} else {
-			ifinfo, err := net.InterfaceByIndex(e.Link)
-			if err == nil {
-				s.WriteString(fmt.Sprintf("%s@%s: ", e.Name, ifinfo.Name))
+			if e.Link == 0 {
+				s.WriteString(fmt.Sprintf("%s@NONE: ", e.Name))
+			} else if e.Link > 0 {
+				ifinfo, err := net.InterfaceByIndex(e.Link)
+				if err == nil {
+					s.WriteString(fmt.Sprintf("%s@%s: ", e.Name, ifinfo.Name))
+				}
 			}
 		}
 	} else {

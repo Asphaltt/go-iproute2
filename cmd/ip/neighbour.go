@@ -7,7 +7,26 @@ import (
 
 	"github.com/Asphaltt/go-iproute2"
 	"github.com/Asphaltt/go-iproute2/ip"
+	"github.com/spf13/cobra"
 )
+
+func neighCmd() *cobra.Command {
+	neighCmd := &cobra.Command{
+		Use:     "neighbour",
+		Aliases: []string{"n", "ne", "nei", "neig", "neigh"},
+		Run: func(cmd *cobra.Command, args []string) {
+			cli.runCmd(cli.listNeighbours)
+		},
+	}
+	neighCmd.AddCommand(&cobra.Command{
+		Use:     "list",
+		Aliases: []string{"l", "li", "lis", "lst", "s", "sh", "sho", "show"},
+		Run: func(cmd *cobra.Command, args []string) {
+			cli.runCmd(cli.listNeighbours)
+		},
+	})
+	return neighCmd
+}
 
 func (c *client) listNeighbours() {
 	ipcli := ip.New(c.conn)
