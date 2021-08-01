@@ -45,16 +45,29 @@ func (c *client) listFdb() {
 
 func printListFdb(e *bridge.FdbEntry) {
 	var devName string
-	if ifc, err := net.InterfaceByIndex(e.Ifindex); err == nil {
-		devName = ifc.Name
+	if ifi, err := net.InterfaceByIndex(e.Ifindex); err == nil {
+		devName = ifi.Name
 	}
 
-	// TODO: show vlan
 	var b strings.Builder
-	b.WriteString(fmt.Sprintf("%s dev %s", e.Lladdr, devName))
-	if e.Flag != 0 {
-		b.WriteString(fmt.Sprintf(" %s", e.Flag))
+	b.WriteString(fmt.Sprintf("%s dev %s ", e.Lladdr, devName))
+
+	if e.Vlan != 0 {
+		b.WriteString(fmt.Sprintf("vlan %d ", e.Vlan))
 	}
-	b.WriteString(fmt.Sprintf(" %s", e.State))
+
+	if e.Flag != 0 {
+		b.WriteString(fmt.Sprintf("%s ", e.Flag))
+	}
+
+	if e.Master != 0 {
+		ifi, err := net.InterfaceByIndex(e.Master)
+		if err == nil {
+			b.WriteString(fmt.Sprintf("master %s ", ifi.Name))
+		}
+	}
+
+	b.WriteString(e.State.String())
+
 	fmt.Println(b.String())
 }

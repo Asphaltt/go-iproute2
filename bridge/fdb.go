@@ -25,6 +25,7 @@ type FdbEntry struct {
 	Flag    iproute2.NtfFlag
 	Ifindex int
 	Lladdr  net.HardwareAddr
+	Vlan    int
 	Master  int
 }
 
@@ -139,6 +140,8 @@ func parseFdbMsg(msg netlink.Message) (*FdbEntry, bool, error) {
 		switch iproute2.NdAttrType(ad.Type()) {
 		case iproute2.NdaLladdr:
 			entry.Lladdr = net.HardwareAddr(ad.Bytes())
+		case iproute2.NdaVlan:
+			entry.Vlan = int(ad.Uint16())
 		case iproute2.NdaMaster:
 			entry.Master = int(ad.Uint32())
 		}
