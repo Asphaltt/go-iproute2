@@ -9,6 +9,7 @@ Some net tools of iproute2 implement with Go.
 1. ip neigh list
 2. ip link list
 3. ip addr list
+4. ip rourte list
 
 ### bridge
 
