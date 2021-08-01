@@ -10,6 +10,10 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+func init() {
+	rootCmd.AddCommand(linkCmd())
+}
+
 func linkCmd() *cobra.Command {
 	linkCmd := &cobra.Command{
 		Use:     "link",

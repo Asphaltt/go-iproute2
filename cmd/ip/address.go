@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"sort"
 	"strings"
@@ -14,6 +13,10 @@ import (
 const (
 	INFINITY_LIFE_TIME = 0xFFFFFFFF
 )
+
+func init() {
+	rootCmd.AddCommand(addrCmd())
+}
 
 func addrCmd() *cobra.Command {
 	addrCmd := &cobra.Command{
@@ -81,7 +84,7 @@ func printAddrEntry(addr *ip.AddrEntry) {
 	}
 	if addr.LocalAddr != nil {
 		s.WriteString(addr.LocalAddr.String())
-		if !bytes.Equal([]byte(addr.LocalAddr), []byte(addr.InterfaceAddr)) {
+		if !addr.LocalAddr.Equal(addr.InterfaceAddr) {
 			s.WriteString(" peer ")
 			s.WriteString(addr.InterfaceAddr.String())
 		}

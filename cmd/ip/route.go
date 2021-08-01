@@ -10,6 +10,10 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+func init() {
+	rootCmd.AddCommand(routeCmd())
+}
+
 func routeCmd() *cobra.Command {
 	routeCmd := &cobra.Command{
 		Use:     "route",

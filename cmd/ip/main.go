@@ -31,14 +31,10 @@ func (c *client) runCmd(fn func()) {
 	fn()
 }
 
-func main() {
-	rootCmd := &cobra.Command{
-		Use: "ip",
-	}
+var rootCmd = cobra.Command{
+	Use: "ip",
+}
 
-	rootCmd.AddCommand(neighCmd())
-	rootCmd.AddCommand(linkCmd())
-	rootCmd.AddCommand(addrCmd())
-	rootCmd.AddCommand(routeCmd())
+func main() {
 	rootCmd.Execute()
 }

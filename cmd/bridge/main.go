@@ -40,35 +40,10 @@ func (c *client) run(dial func() error, fn func()) {
 	fn()
 }
 
+var rootCmd = cobra.Command{
+	Use: "bridge",
+}
+
 func main() {
-	rootCmd := &cobra.Command{
-		Use: "bridge",
-	}
-
-	monitorCmd := &cobra.Command{
-		Use: "monitor",
-	}
-	monitorCmd.AddCommand(&cobra.Command{
-		Use: "fdb",
-		Run: func(cmd *cobra.Command, args []string) {
-			cli.runFdbMonitor(cli.monitorFdb)
-		},
-	})
-
-	fdbCmd := &cobra.Command{
-		Use: "fdb",
-		Run: func(cmd *cobra.Command, args []string) {
-			cli.runCmd(cli.listFdb)
-		},
-	}
-	fdbCmd.AddCommand(&cobra.Command{
-		Use: "list",
-		Run: func(cmd *cobra.Command, args []string) {
-			cli.runCmd(cli.listFdb)
-		},
-	})
-
-	rootCmd.AddCommand(fdbCmd)
-	rootCmd.AddCommand(monitorCmd)
 	rootCmd.Execute()
 }
