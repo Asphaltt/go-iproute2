@@ -1,15 +1,14 @@
 package ip
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"unsafe"
 
 	"github.com/Asphaltt/go-iproute2"
+	"github.com/Asphaltt/go-iproute2/internal/etc"
 	"github.com/mdlayher/netlink"
 	"golang.org/x/sys/unix"
 )
@@ -219,7 +218,7 @@ func (s LinkOperState) String() string {
 		"UP",
 	}
 	if int(s) >= len(operStates) {
-		return fmt.Sprintf("0x%x", s)
+		return fmt.Sprintf("0x%x", int(s))
 	}
 	return operStates[s]
 }
@@ -242,28 +241,8 @@ type LinkGroup int
 // String returns the string description of the LinkGroup.
 // The group information is from */etc/iproute2/group*.
 func (g LinkGroup) String() string {
-	fd, err := os.Open("/etc/iproute2/group")
-	if err != nil {
-		return ""
-	}
-	defer fd.Close()
-
-	scanner := bufio.NewScanner(fd)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if line[0] == '#' {
-			continue
-		}
-		elems := strings.Split(line, "\t")
-		if len(elems) < 2 {
-			continue
-		}
-		n, err := strconv.Atoi(elems[0])
-		if err == nil && n == int(g) {
-			return elems[1]
-		}
-	}
-	return ""
+	groups, _ := etc.ReadGroup()
+	return groups[int(g)]
 }
 
 // A LinkEntry contains information for the link from kernel，

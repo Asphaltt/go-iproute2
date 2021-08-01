@@ -17,6 +17,7 @@ const (
 	SizeofIfAddrMsg    = unix.SizeofIfAddrmsg
 	SizeofIfaCacheinfo = unix.SizeofIfaCacheinfo
 	SizeofNdMsg        = unix.SizeofNdMsg
+	SizeofRtMsg        = unix.SizeofRtMsg
 )
 
 // An InetDiagReq is a request message for sock diag netlink.
@@ -175,6 +176,26 @@ func (m *IfaCacheinfo) UnmarshalBinary(data []byte) error {
 
 	newIfaMsg := (*IfaCacheinfo)(unsafe.Pointer(&data[0]))
 	*m = *newIfaMsg
+	return nil
+}
+
+// RtMsg is a route message, that's an alias of
+// golang.org/x/sys/unix.RtMsg
+type RtMsg unix.RtMsg
+
+// MarshalBinary marshals a route message to byte slice.
+func (m *RtMsg) MarshalBinary() ([]byte, error) {
+	return struct2bytes(unsafe.Pointer(m), SizeofRtMsg), nil
+}
+
+// UnmarshalBinary unmarshals a route message from byte slice.
+func (m *RtMsg) UnmarshalBinary(data []byte) error {
+	if len(data) < SizeofRtMsg {
+		return errors.New("RtMsg: not enough data to unmarshal")
+	}
+
+	newRtMsg := (*RtMsg)(unsafe.Pointer(&data[0]))
+	*m = *newRtMsg
 	return nil
 }
 

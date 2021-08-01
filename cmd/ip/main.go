@@ -39,5 +39,6 @@ func main() {
 	rootCmd.AddCommand(neighCmd())
 	rootCmd.AddCommand(linkCmd())
 	rootCmd.AddCommand(addrCmd())
+	rootCmd.AddCommand(routeCmd())
 	rootCmd.Execute()
 }

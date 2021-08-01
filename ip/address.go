@@ -119,7 +119,7 @@ func (f AddrFlag) String() string {
 		flags &= ^data.Mask
 	}
 	if flags != 0 {
-		s.WriteString(fmt.Sprintf("flags %02x", f))
+		s.WriteString(fmt.Sprintf("flags %02x", int(f)))
 	}
 	return s.String()
 }
@@ -145,7 +145,7 @@ func (f AddrFlagV6) String() string {
 		flags &= ^data.Mask
 	}
 	if flags != 0 {
-		s.WriteString(fmt.Sprintf("flags %02x", f))
+		s.WriteString(fmt.Sprintf("flags %02x", int(f)))
 	}
 	return s.String()
 }
