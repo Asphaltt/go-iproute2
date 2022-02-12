@@ -14,7 +14,18 @@ type Client struct {
 }
 
 // New creates a Client which can issue ss commands.
-func New(conn *netlink.Conn) *Client {
+func New() (*Client, error) {
+	conn, err := netlink.Dial(iproute2.FamilySocketMonitoring, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewWithConn(conn), nil
+}
+
+// NewWithConn creates a Client which can issue ss commands using an existing
+// netlink connection.
+func NewWithConn(conn *netlink.Conn) *Client {
 	return &Client{
 		conn: conn,
 	}
@@ -28,6 +39,7 @@ type Entry struct {
 	LocalAddr, PeerAddr net.IP
 	LocalPort, PeerPort int
 	Ifindex             int
+	Inode               int
 	IsIPv4              bool
 }
 
@@ -64,6 +76,7 @@ func (c *Client) listSockets(req *iproute2.InetDiagReq) ([]*Entry, error) {
 		e.SendQ = diagMsg.WQueue
 		e.LocalPort = int(diagMsg.Sport)
 		e.PeerPort = int(diagMsg.Dport)
+		e.Inode = int(diagMsg.Inode)
 		e.Ifindex = int(diagMsg.Ifindex)
 		if diagMsg.Family == syscall.AF_INET {
 			e.IsIPv4 = true

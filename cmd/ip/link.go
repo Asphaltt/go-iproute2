@@ -46,7 +46,7 @@ func (c *client) getLinks(ipcli *ip.Client) (map[int]*ip.LinkEntry, error) {
 }
 
 func (c *client) listLinks() {
-	ipcli := ip.New(c.conn)
+	ipcli := ip.NewWithConn(c.conn)
 	entries, err := ipcli.ListLinks()
 	if err != nil {
 		fmt.Println("failed to list link entries, err:", err)

@@ -33,7 +33,7 @@ func routeCmd() *cobra.Command {
 }
 
 func (c *client) listRoutes() {
-	ipcli := ip.New(c.conn)
+	ipcli := ip.NewWithConn(c.conn)
 	entries, err := ipcli.ListRoutes()
 	if err != nil {
 		fmt.Println("failed to list route entries, err:", err)

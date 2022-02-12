@@ -33,7 +33,7 @@ func neighCmd() *cobra.Command {
 }
 
 func (c *client) listNeighbours() {
-	ipcli := ip.New(c.conn)
+	ipcli := ip.NewWithConn(c.conn)
 	entries, err := ipcli.ListNeighbours()
 	if err != nil {
 		fmt.Println("failed to list neighbour entries, err:", err)

@@ -37,7 +37,7 @@ func addrCmd() *cobra.Command {
 }
 
 func (c *client) listAddrs() {
-	ipcli := ip.New(c.conn)
+	ipcli := ip.NewWithConn(c.conn)
 	links, err := c.getLinks(ipcli)
 	if err != nil {
 		fmt.Println("failed to get interfaces link information, err:", err)

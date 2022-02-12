@@ -15,7 +15,7 @@ func (c *client) showUDP(listen, udp4, udp6 bool) {
 }
 
 func (c *client) showUDPSockets(udp4, udp6 bool) {
-	sc := ss.New(c.conn)
+	sc := ss.NewWithConn(c.conn)
 	if udp4 {
 		c.showUDP4Sockets(sc)
 	}
@@ -40,7 +40,7 @@ func (c *client) showUDPListeners(udp4, udp6 bool) {
 	if c.mix {
 		c.netid = "udp"
 	}
-	sc := ss.New(c.conn)
+	sc := ss.NewWithConn(c.conn)
 	if udp4 {
 		c.showUDP4Listeners(sc)
 	}
