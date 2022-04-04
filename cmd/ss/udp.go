@@ -25,21 +25,18 @@ func (c *client) showUDPSockets(udp4, udp6 bool) {
 }
 
 func (c *client) showUDP4Sockets(sc *ss.Client) {
-	if err := c.showEntries(sc.ListUdp4Sockets()); err != nil {
+	if err := c.showUdpEntries(sc.ListUdp4Sockets, config.process); err != nil {
 		fmt.Println("failed to list IPv4 udp sockets, err:", err)
 	}
 }
 
 func (c *client) showUDP6Sockets(sc *ss.Client) {
-	if err := c.showEntries(sc.ListUdp6Sockets()); err != nil {
+	if err := c.showUdpEntries(sc.ListUdp6Sockets, config.process); err != nil {
 		fmt.Println("failed to list IPv6 udp sockets, err:", err)
 	}
 }
 
 func (c *client) showUDPListeners(udp4, udp6 bool) {
-	if c.mix {
-		c.netid = "udp"
-	}
 	sc := ss.NewWithConn(c.conn)
 	if udp4 {
 		c.showUDP4Listeners(sc)
@@ -50,13 +47,13 @@ func (c *client) showUDPListeners(udp4, udp6 bool) {
 }
 
 func (c *client) showUDP4Listeners(sc *ss.Client) {
-	if err := c.showEntries(sc.ListUdp4Listeners()); err != nil {
+	if err := c.showUdpEntries(sc.ListUdp4Listeners, config.process); err != nil {
 		fmt.Println("failed to list IPv4 udp listeners, err:", err)
 	}
 }
 
 func (c *client) showUDP6Listeners(sc *ss.Client) {
-	if err := c.showEntries(sc.ListUdp6Listeners()); err != nil {
+	if err := c.showUdpEntries(sc.ListUdp6Listeners, config.process); err != nil {
 		fmt.Println("failed to list IPv6 udp listeners, err:", err)
 	}
 }

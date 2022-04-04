@@ -1,17 +1,27 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"os"
 )
 
 var config struct {
 	summary bool
+	process bool
 
+	all    bool
 	v4, v6 bool
 	listen bool
 	tcp    bool
 	udp    bool
+}
+
+func showAllSocket() {
+	config.udp = true
+	config.tcp = true
+	config.v4 = true
+	config.v6 = true
+	config.listen = true
 }
 
 func isMixConfig() bool {
@@ -63,6 +73,8 @@ func main() {
 			switch b {
 			case 's':
 				config.summary = true
+			case 'a':
+				config.all = true
 			case '4':
 				config.v4 = true
 				config.v6 = false
@@ -75,7 +87,15 @@ func main() {
 				config.tcp = true
 			case 'u':
 				config.udp = true
+			case 'p':
+				config.process = true
 			}
+		}
+	}
+
+	if config.process {
+		if err := prepareProcs(); err != nil {
+			log.Fatalf("failed to prepare process, err: %v", err)
 		}
 	}
 
@@ -83,22 +103,22 @@ func main() {
 		showSummary()
 	}
 
+	if config.all {
+		showAllSocket()
+	}
 	if noSock() {
-		if config.summary || !config.listen {
+		if config.summary {
 			return
 		}
 
 		// list all listening sockets
-		config.udp = true
 		config.tcp = true
-		config.v4 = true
-		config.v6 = true
+		config.udp = true
 	}
 
 	c, err := dialNetlink()
 	if err != nil {
-		fmt.Println("failed to create netlink socket, err:", err)
-		return
+		log.Fatalf("failed to create netlink socket, err: %v", err)
 	}
 	defer c.Close()
 

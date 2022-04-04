@@ -25,21 +25,18 @@ func (c *client) showTCPConns(tcp4, tcp6 bool) {
 }
 
 func (c *client) showTCP4Conns(sc *ss.Client) {
-	if err := c.showEntries(sc.ListTcp4Conns()); err != nil {
+	if err := c.showTcpEntries(sc.ListTcp4Conns, config.process); err != nil {
 		fmt.Println("failed to list IPv4 tcp connections, err:", err)
 	}
 }
 
 func (c *client) showTCP6Conns(sc *ss.Client) {
-	if err := c.showEntries(sc.ListTcp6Conns()); err != nil {
+	if err := c.showTcpEntries(sc.ListTcp6Conns, config.process); err != nil {
 		fmt.Println("failed to list IPv6 tcp connections, err:", err)
 	}
 }
 
 func (c *client) showTCPListeners(tcp4, tcp6 bool) {
-	if c.mix {
-		c.netid = "tcp"
-	}
 	sc := ss.NewWithConn(c.conn)
 	if tcp4 {
 		c.showTCP4Listeners(sc)
@@ -50,13 +47,13 @@ func (c *client) showTCPListeners(tcp4, tcp6 bool) {
 }
 
 func (c *client) showTCP4Listeners(sc *ss.Client) {
-	if err := c.showEntries(sc.ListTcp4Listeners()); err != nil {
+	if err := c.showTcpEntries(sc.ListTcp4Listeners, config.process); err != nil {
 		fmt.Println("failed to list IPv4 tcp listeners, err:", err)
 	}
 }
 
 func (c *client) showTCP6Listeners(sc *ss.Client) {
-	if err := c.showEntries(sc.ListTcp6Listeners()); err != nil {
+	if err := c.showTcpEntries(sc.ListTcp6Listeners, config.process); err != nil {
 		fmt.Println("failed to list IPv6 tcp listeners, err:", err)
 	}
 }

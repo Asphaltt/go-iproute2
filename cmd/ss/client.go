@@ -11,9 +11,6 @@ import (
 
 type client struct {
 	conn *netlink.Conn
-
-	mix   bool
-	netid string
 }
 
 func dialNetlink() (*client, error) {
@@ -24,7 +21,6 @@ func dialNetlink() (*client, error) {
 
 	var c client
 	c.conn = conn
-	c.mix = isMixConfig()
 	return &c, nil
 }
 
@@ -36,28 +32,51 @@ func (c *client) Close() error {
 }
 
 func (c *client) showSocketInfoHeader() {
-	if c.mix {
+	if isMixConfig() {
 		// "Netid     "
 		fmt.Printf("Netid     ")
 	}
 	// "State     Recv-Q     Send-Q     Local Address:Port     Peer Address:Port"
-	fmt.Printf("%-10s     %-6s     %-6s    %24s:%-5s     %24s:%-5s\n",
+	fmt.Printf("%-10s     %-6s     %-6s    %24s:%-5s     %24s:%-5s",
 		"State", "Recv-Q", "Send-Q",
 		"Local Address", "Port", "Peer Address", "Port")
+
+	// show process info
+	if config.process {
+		fmt.Print(" Process")
+	}
+
+	fmt.Println()
 }
 
-func (c *client) showEntries(entries []*ss.Entry, err error) error {
+func getNetid(netid string) string {
+	if isMixConfig() {
+		return netid
+	}
+	return ""
+}
+
+func (c *client) showTcpEntries(fn func() ([]*ss.Entry, error), showProc bool) error {
+	return c.showEntries(fn, getNetid("tcp"), showProc)
+}
+
+func (c *client) showUdpEntries(fn func() ([]*ss.Entry, error), showProc bool) error {
+	return c.showEntries(fn, getNetid("udp"), showProc)
+}
+
+func (c *client) showEntries(fn func() ([]*ss.Entry, error), netid string, showProc bool) error {
+	entries, err := fn()
 	if err != nil {
 		return err
 	}
 	for _, e := range entries {
-		printEntry(e, c.netid)
+		printEntry(e, netid, showProc)
 	}
 	return nil
 }
 
 // "State     Recv-Q     Send-Q     Local Address:Port     Peer Address:Port"
-const fmtEntry = "%-10s     %-6d     %-6d    %24s:%-5d     %24s:%s\n"
+const fmtEntry = "%-10s     %-6d     %-6d    %24s:%-5d     %24s:%s"
 
 func isZeroIPv6Addr(addr net.IP) bool {
 	if addr.To16() == nil {
@@ -74,7 +93,7 @@ func isZeroIPv6Addr(addr net.IP) bool {
 
 // String formats Entry into
 // '[Netid    ]State     Recv-Q     Send-Q     Local Address:Port     Peer Address:Port'.
-func printEntry(e *ss.Entry, netid string) {
+func printEntry(e *ss.Entry, netid string, showProc bool) {
 	if netid != "" {
 		fmt.Printf("%-5s     ", netid)
 	}
@@ -106,7 +125,7 @@ func printEntry(e *ss.Entry, netid string) {
 	}
 	var peerPort string
 	if e.PeerPort == 0 {
-		peerPort = "*"
+		peerPort = fmt.Sprintf("%-5s", "*")
 	} else {
 		peerPort = fmt.Sprintf("%-5d", e.PeerPort)
 	}
@@ -116,4 +135,13 @@ func printEntry(e *ss.Entry, netid string) {
 		laddr, e.LocalPort,
 		peerAddr, peerPort,
 	)
+
+	// show process info
+	if showProc {
+		if pinfo, ok := procs[e.Inode]; ok {
+			fmt.Printf(" users:(%s)", pinfo)
+		}
+	}
+
+	fmt.Println() // newline
 }
